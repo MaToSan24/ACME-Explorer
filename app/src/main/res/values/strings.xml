@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">ACME Explorer</string>
+    <string name="viajes_disponibles">Viajes disponibles</string>
+    <string name="viajes_seleccionados">Viajes seleccionados</string>
+    <string name="city_image">City image</string>
+    <string name="ciudad">Ciudad</string>
+    <string name="precio">Precio</string>
+    <string name="fecha_inicio">Fecha Inicio</string>
+    <string name="fecha_fin">Fecha Fin</string>
+</resources>
