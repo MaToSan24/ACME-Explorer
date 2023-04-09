@@ -7,6 +7,8 @@ In order for the images to be displayed correctly, you will need a "secrets.xml"
 </resources>
 ```
 
+Additionally, you will need a google-services.json and a GOOGLE_MAPS_API_KEY in order for the Firebase and Google Maps features to work.
+
 This project uses icons from [Flaticon](https://www.flaticon.com/), licensed by [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/).
 
 Attribution is required by [Flaticon](https://www.flaticon.com/), as per their [License](https://file000.flaticon.com/downloads/license/license.pdf).
