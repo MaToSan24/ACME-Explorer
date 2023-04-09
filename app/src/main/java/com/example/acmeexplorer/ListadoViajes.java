@@ -3,6 +3,7 @@ package com.example.acmeexplorer;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -27,6 +28,10 @@ import android.widget.Toast;
 
 import com.example.acmeexplorer.entity.Trip;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -36,12 +41,14 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ListadoViajes extends AppCompatActivity {
 
     private RecyclerView recyclerView;
-    private ArrayList<Trip> trips;
-    private ArrayList<Trip> filteredTrips;
+    private ArrayList<Trip> trips = new ArrayList<>();
+    private ArrayList<Trip> filteredTrips = new ArrayList<>();
     private ActivityResultLauncher<Intent> launcherDetalleViaje;
     private Intent intentDetalleViaje;
     private Integer selectedPosition;
@@ -52,14 +59,18 @@ public class ListadoViajes extends AppCompatActivity {
     Integer filterMaxPrice;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
-
+    FirebaseDatabaseService firebaseDatabaseService;
+    Boolean vistaSeleccionados;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listado_viajes);
 
+        firebaseDatabaseService = FirebaseDatabaseService.getServiceInstance();
+
         trips = getIntent().getParcelableArrayListExtra("Trips");
+        vistaSeleccionados = getIntent().getBooleanExtra("Seleccionados", false);
         filteredTrips = new ArrayList<>(trips);
 
         sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
@@ -70,21 +81,22 @@ public class ListadoViajes extends AppCompatActivity {
         filterMaxPrice = sharedPreferences.getInt("filterMaxPrice", 1000);
 
         recyclerView = findViewById(R.id.recyclerView);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        ViajesAdapter adapter = new ViajesAdapter(this, filteredTrips);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(ListadoViajes.this);
+        ViajesAdapter adapter = new ViajesAdapter(ListadoViajes.this, filteredTrips);
 
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
+        adapter.setTrips(filteredTrips);
 
         launcherDetalleViaje = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
-                        Trip viajeSeleccionado = result.getData().getParcelableExtra("viajeSeleccionado");
-                        filteredTrips.set(selectedPosition, viajeSeleccionado);
-                        Integer tripIndex = trips.stream().filter(t -> t.getId().equals(viajeSeleccionado.getId())).findFirst().map(trips::indexOf).get();
-                        trips.set(tripIndex, viajeSeleccionado);
-                        adapter.notifyDataSetChanged(); // Actualiza la vista del elemento seleccionado
+//                        Trip viajeSeleccionado = result.getData().getParcelableExtra("viajeSeleccionado");
+//                        filteredTrips.set(selectedPosition, viajeSeleccionado);
+//                        Integer tripIndex = trips.indexOf(viajeSeleccionado);
+//                        trips.set(tripIndex, viajeSeleccionado);
+//                        adapter.notifyDataSetChanged(); // Actualiza la vista del elemento seleccionado
                     }
                 }
         );
@@ -116,7 +128,7 @@ public class ListadoViajes extends AppCompatActivity {
                                 return true; // Return true to consume the event and prevent scrolling
                             }
                         }
-                    break;
+                        break;
                 }
                 return false;
             }
@@ -139,6 +151,26 @@ public class ListadoViajes extends AppCompatActivity {
 
         FloatingActionButton fab = findViewById(R.id.fabFilter);
         fab.setOnClickListener(view -> showFilterDialog(adapter));
+
+        firebaseDatabaseService.getTrips().addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                ArrayList<Trip> loadingTrips = new ArrayList<>();
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                    Trip trip = Trip.fromMap((Map<String, Object>) dataSnapshot.getValue());
+                    if (!vistaSeleccionados || trip.getSeleccionado()) {
+                        loadingTrips.add(trip);
+                    }
+                }
+                trips = new ArrayList<>(loadingTrips);
+                filteredTrips = new ArrayList<>(trips);
+                adapter.setTrips(filteredTrips);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
     private void showFilterDialog(ViajesAdapter adapter) {
@@ -175,7 +207,7 @@ public class ListadoViajes extends AppCompatActivity {
             }
 
             filterMinPrice = Integer.parseInt(minPriceEditText.getText().toString().equals("") ? "0" : minPriceEditText.getText().toString());
-            filterMaxPrice = Integer.parseInt(maxPriceEditText.getText().toString().equals("") ? String.valueOf(Integer.MAX_VALUE) : maxPriceEditText.getText().toString());
+            filterMaxPrice = Integer.parseInt(maxPriceEditText.getText().toString().equals("") ? "1000" : maxPriceEditText.getText().toString());
 
             if (!errorsExist(filterStartDate, filterEndDate, filterMinPrice, filterMaxPrice)) {
                 // Aplicar el filtro a la lista de viajes
@@ -287,7 +319,7 @@ class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajesViewHolder>
     private ArrayList<Trip> trips;
     private LayoutInflater inflater;
     DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-
+    FirebaseDatabaseService firebaseDatabaseService = FirebaseDatabaseService.getServiceInstance();
 
     public ViajesAdapter(Context context, ArrayList<Trip> trips) {
         inflater = LayoutInflater.from(context);

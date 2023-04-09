@@ -10,10 +10,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.acmeexplorer.entity.Trip;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.squareup.picasso.Picasso;
@@ -27,6 +29,7 @@ public class TripDetails extends AppCompatActivity {
     TextView textViewCiudad, textViewPrecio, textViewDuracion, textViewDescripcion;
     MaterialButton materialButtonComprar;
     Animation fadeInAnimation, fadeOutAnimation, scaleAnimation;
+    FirebaseDatabaseService firebaseDatabaseService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +37,7 @@ public class TripDetails extends AppCompatActivity {
         setContentView(R.layout.trip_details);
 
         trip = getIntent().getParcelableExtra("Trip");
+        firebaseDatabaseService = FirebaseDatabaseService.getServiceInstance();
 
         imageViewImagen = findViewById(R.id.imageViewImagen);
         imageViewSeleccionar = findViewById(R.id.imageViewSeleccionar);
@@ -42,6 +46,13 @@ public class TripDetails extends AppCompatActivity {
         textViewDuracion = findViewById(R.id.textViewDuracion);
         textViewDescripcion = findViewById(R.id.textViewDescripcion);
         materialButtonComprar = findViewById(R.id.materialButtonComprar);
+
+        Button buttonMaps = findViewById(R.id.buttonMaps);
+        buttonMaps.setOnClickListener(view -> {
+            Intent intent = new Intent(this, MapsActivity.class);
+            intent.putExtra("Trip", trip);
+            startActivity(intent);
+        });
 
         fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
         fadeOutAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
@@ -69,13 +80,19 @@ public class TripDetails extends AppCompatActivity {
             materialButtonComprar.setVisibility(trip.getSeleccionado() ? View.VISIBLE : View.GONE);
             materialButtonComprar.startAnimation(trip.getSeleccionado() ? fadeInAnimation : fadeOutAnimation);
 
+            firebaseDatabaseService.upsertTrip(trip, (databaseError, databaseReference) -> {
+                if (databaseError != null) {
+                    Snackbar.make(view, "¡Error al guardar el viaje!", Snackbar.LENGTH_SHORT).show();
+                }
+            });
+
             if (trip.getSeleccionado()) {
                 imageViewSeleccionar.startAnimation(fadeInAnimation);
                 imageViewSeleccionar.setImageResource(R.drawable.selected);
                 Snackbar.make(view, "¡Viaje seleccionado!", Snackbar.LENGTH_SHORT).show();
             } else {
                 imageViewSeleccionar.setImageResource(R.drawable.notselected);
-                Snackbar.make(view, "¡Viaje deseleccionado!", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(view, "¡Viaje deseleccionado!", Snackbar.LENGTH_SHORT ).show();
             }
 
             Intent resultadoIntent = new Intent();

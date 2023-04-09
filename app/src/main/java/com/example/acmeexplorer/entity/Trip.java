@@ -8,6 +8,8 @@ import androidx.annotation.NonNull;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Map;
+import java.util.Objects;
 
 public class Trip implements Parcelable {
 
@@ -28,7 +30,7 @@ public class Trip implements Parcelable {
         this.urlImagen = urlImagen;
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
-        this.seleccionado = false;
+        this.seleccionado = seleccionado;
     }
 
     public Trip() {
@@ -122,6 +124,38 @@ public class Trip implements Parcelable {
         this.seleccionado = seleccionado;
     }
 
+    public Map<String, Object> toMap() {
+        return Map.of(
+                "id", id,
+                "ciudad", ciudad,
+                "descripcion", descripcion,
+                "precio", precio,
+                "urlImagen", urlImagen,
+                "fechaInicio", fechaInicio.getTimeInMillis(),
+                "fechaFin", fechaFin.getTimeInMillis(),
+                "seleccionado", seleccionado
+        );
+    }
+
+    public static Trip fromMap(Map<String, Object> map) {
+        Long precio = (Long) map.get("precio");
+        Calendar fechaInicio = Calendar.getInstance();
+        fechaInicio.setTimeInMillis((Long) map.get("fechaInicio"));
+        Calendar fechaFin = Calendar.getInstance();
+        fechaFin.setTimeInMillis((Long) map.get("fechaFin"));
+
+        return new Trip(
+                (String) map.get("id"),
+                (String) map.get("ciudad"),
+                (String) map.get("descripcion"),
+                precio.intValue(),
+                (String) map.get("urlImagen"),
+                fechaInicio,
+                fechaFin,
+                (Boolean) map.get("seleccionado")
+        );
+    }
+
     @Override
     public String toString() {
         DateFormat formatter = new SimpleDateFormat("dd/M/yy");
@@ -175,5 +209,18 @@ public class Trip implements Parcelable {
         fechaFin.setTimeInMillis(in.readLong());
         byte tmpSeleccionado = in.readByte();
         seleccionado = tmpSeleccionado == 0 ? null : tmpSeleccionado == 1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Trip)) return false;
+        Trip trip = (Trip) o;
+        return Objects.equals(id, trip.id) && Objects.equals(ciudad, trip.ciudad) && Objects.equals(descripcion, trip.descripcion) && Objects.equals(precio, trip.precio) && Objects.equals(urlImagen, trip.urlImagen) && Objects.equals(fechaInicio, trip.fechaInicio) && Objects.equals(fechaFin, trip.fechaFin) && Objects.equals(seleccionado, trip.seleccionado);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, ciudad, descripcion, precio, urlImagen, fechaInicio, fechaFin, seleccionado);
     }
 }

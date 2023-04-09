@@ -18,7 +18,13 @@
         <item name="android:datePickerMode">calendar</item>
         <item name="android:textSize">18sp</item>
         <item name="android:headerBackground">#FFFFFF</item>
-        <item name="android:radioButtonStyle"></item>
+    </style>
+
+    <style name="PrimaryFlatButton" parent="Theme.AppCompat.Light">
+        <item name="android:buttonStyle">
+            @style/Widget.AppCompat.Button.Borderless.Colored
+        </item>
+        <item name="colorAccent">#0731da</item>
     </style>
 
 </resources>

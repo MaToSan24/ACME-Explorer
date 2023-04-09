@@ -118,7 +118,7 @@ public class Splash extends AppCompatActivity {
         editor.putInt("filterMaxPrice", 1000);
         editor.apply();
 
-        Intent intent = new Intent(Splash.this, MainActivity.class);
+        Intent intent = new Intent(Splash.this, LoginActivity.class);
         intent.putParcelableArrayListExtra("Trips", trips);
         startActivity(intent);
 
